@@ -8,7 +8,6 @@ let quotes = [
 // Display area
 const quoteDisplay = document.getElementById("quoteDisplay");
 const newQuoteBtn = document.getElementById("newQuote");
-const addQuoteBtn = document.getElementById("addQuoteBtn");
 
 // Function to show a random quote
 function showRandomQuote() {
@@ -41,9 +40,42 @@ function addQuote() {
   alert("New quote added successfully!");
 }
 
+// Function to dynamically create the Add Quote Form
+function createAddQuoteForm() {
+  const formContainer = document.createElement("div");
+  formContainer.classList.add("form-container");
+
+  const title = document.createElement("h3");
+  title.textContent = "Add a New Quote";
+  formContainer.appendChild(title);
+
+  // Input for quote text
+  const quoteInput = document.createElement("input");
+  quoteInput.type = "text";
+  quoteInput.id = "newQuoteText";
+  quoteInput.placeholder = "Enter a new quote";
+  formContainer.appendChild(quoteInput);
+
+  // Input for category
+  const categoryInput = document.createElement("input");
+  categoryInput.type = "text";
+  categoryInput.id = "newQuoteCategory";
+  categoryInput.placeholder = "Enter quote category";
+  formContainer.appendChild(categoryInput);
+
+  // Add button
+  const addBtn = document.createElement("button");
+  addBtn.textContent = "Add Quote";
+  addBtn.addEventListener("click", addQuote);
+  formContainer.appendChild(addBtn);
+
+  // Append form to body (or anywhere else)
+  document.body.appendChild(formContainer);
+}
+
 // Event Listeners
 newQuoteBtn.addEventListener("click", showRandomQuote);
-addQuoteBtn.addEventListener("click", addQuote);
 
-// Show an initial quote
+// Initialize app
 showRandomQuote();
+createAddQuoteForm(); // Build form dynamically
