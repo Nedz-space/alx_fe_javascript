@@ -26,7 +26,7 @@
     .form-container {
       margin-top: 20px;
     }
-    input {
+    input, select {
       margin: 5px;
       padding: 8px;
     }
@@ -43,6 +43,15 @@
   <!-- Quote Display -->
   <div id="quoteDisplay">Click the button to see a quote!</div>
   <button id="newQuote">Show New Quote</button>
+
+  <!-- Category Filter -->
+  <div>
+    <h3>Filter by Category</h3>
+    <select id="categoryFilter" onchange="filterQuotes()">
+      <option value="all">All Categories</option>
+      <!-- Populated dynamically -->
+    </select>
+  </div>
 
   <!-- JSON Import/Export -->
   <div class="json-controls">
