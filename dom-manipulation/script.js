@@ -20,6 +20,7 @@ function addQuote(text, author, category) {
   localStorage.setItem("quotes", JSON.stringify(quotes));
   displayQuotes();
   populateCategories();
+  alert("Quote added successfully!");
 }
 
 // Display quotes based on filter
@@ -49,6 +50,7 @@ function removeQuote(index) {
   localStorage.setItem("quotes", JSON.stringify(quotes));
   displayQuotes();
   populateCategories();
+  alert("Quote removed!");
 }
 
 // --------------------- CATEGORY FILTER ---------------------
@@ -85,6 +87,8 @@ addQuoteForm.addEventListener("submit", function (e) {
   if (text && author && category) {
     addQuote(text, author, category);
     addQuoteForm.reset();
+  } else {
+    alert("Please fill in all fields before adding a quote.");
   }
 });
 
@@ -111,8 +115,10 @@ async function fetchQuotesFromServer() {
 
     displayQuotes();
     populateCategories();
+    alert("Quotes fetched from server!");
   } catch (err) {
-    console.error("Error fetching quotes from server:", err);
+    alert("Error fetching quotes from server!");
+    console.error("Error fetching quotes:", err);
   }
 }
 
@@ -124,8 +130,10 @@ async function pushQuotesToServer() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(quotes),
     });
+    alert("Local quotes pushed to server!");
   } catch (err) {
-    console.error("Error pushing quotes to server:", err);
+    alert("Error pushing quotes to server!");
+    console.error("Error pushing quotes:", err);
   }
 }
 
@@ -133,7 +141,8 @@ async function pushQuotesToServer() {
 async function syncQuotes() {
   await fetchQuotesFromServer();
   await pushQuotesToServer();
-  console.log("Quotes synced with server!"); // ✅ exact log required
+  alert("Quotes synced with server!"); // ✅ alert version
+  console.log("Quotes synced with server!"); // ✅ console log version
 }
 
 // Periodic sync (every 30s)
