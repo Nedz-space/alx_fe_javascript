@@ -1,166 +1,149 @@
-// ============================
-// Dynamic Quote Generator
-// ============================
+// script.js
 
-let quotes = [];
+// Global quotes array
+let quotes = JSON.parse(localStorage.getItem("quotes")) || [];
 
-// Load from Local Storage
-function loadQuotes() {
-  const storedQuotes = localStorage.getItem("quotes");
-  quotes = storedQuotes ? JSON.parse(storedQuotes) : [];
-}
+// DOM elements
+const quotesList = document.getElementById("quotesList");
+const addQuoteForm = document.getElementById("addQuoteForm");
+const categoryFilter = document.getElementById("categoryFilter");
 
-// Save to Local Storage
-function saveQuotes() {
+// Load last selected filter
+let lastSelectedCategory = localStorage.getItem("selectedCategory") || "all";
+
+// --------------------- QUOTE FUNCTIONS ---------------------
+
+// Add quote
+function addQuote(text, author, category) {
+  const newQuote = { text, author, category };
+  quotes.push(newQuote);
   localStorage.setItem("quotes", JSON.stringify(quotes));
+  displayQuotes();
+  populateCategories();
 }
 
-// Create add-quote form
-function createAddQuoteForm() {
-  const form = document.getElementById("addQuoteForm");
-  form.addEventListener("submit", function (e) {
-    e.preventDefault();
-    const text = document.getElementById("quoteText").value;
-    const author = document.getElementById("quoteAuthor").value;
-    const category = document.getElementById("quoteCategory").value;
+// Display quotes based on filter
+function displayQuotes() {
+  quotesList.innerHTML = "";
+  let filteredQuotes = quotes;
 
-    if (text && author && category) {
-      quotes.push({ text, author, category });
-      saveQuotes();
-      populateCategories();
-      displayQuotes(quotes);
-      form.reset();
-    }
-  });
-}
+  const selectedCategory = localStorage.getItem("selectedCategory") || "all";
+  if (selectedCategory !== "all") {
+    filteredQuotes = quotes.filter(q => q.category === selectedCategory);
+  }
 
-// Display quotes
-function displayQuotes(quotesToDisplay) {
-  const list = document.getElementById("quoteList");
-  list.innerHTML = "";
-  quotesToDisplay.forEach((q) => {
+  filteredQuotes.forEach((quote, index) => {
     const li = document.createElement("li");
-    li.textContent = `"${q.text}" — ${q.author} [${q.category}]`;
-    list.appendChild(li);
+    li.textContent = `"${quote.text}" — ${quote.author} [${quote.category}]`;
+    const removeBtn = document.createElement("button");
+    removeBtn.textContent = "Remove";
+    removeBtn.onclick = () => removeQuote(index);
+    li.appendChild(removeBtn);
+    quotesList.appendChild(li);
   });
 }
 
-// Populate categories
-function populateCategories() {
-  const select = document.getElementById("categoryFilter");
-  const categories = ["all", ...new Set(quotes.map((q) => q.category))];
+// Remove quote
+function removeQuote(index) {
+  quotes.splice(index, 1);
+  localStorage.setItem("quotes", JSON.stringify(quotes));
+  displayQuotes();
+  populateCategories();
+}
 
-  select.innerHTML = "";
-  categories.forEach((cat) => {
+// --------------------- CATEGORY FILTER ---------------------
+
+// Populate categories dynamically
+function populateCategories() {
+  const categories = [...new Set(quotes.map(q => q.category))];
+  categoryFilter.innerHTML = `<option value="all">All Categories</option>`;
+  categories.forEach(cat => {
     const option = document.createElement("option");
     option.value = cat;
-    option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
-    select.appendChild(option);
+    option.textContent = cat;
+    if (cat === lastSelectedCategory) option.selected = true;
+    categoryFilter.appendChild(option);
   });
-
-  // Restore last selected
-  const lastCategory = localStorage.getItem("lastCategory");
-  if (lastCategory && categories.includes(lastCategory)) {
-    select.value = lastCategory;
-    filterQuotes();
-  }
 }
 
-// Filter by category
+// Filter quotes
 function filterQuotes() {
-  const category = document.getElementById("categoryFilter").value;
-  localStorage.setItem("lastCategory", category);
-  if (category === "all") {
-    displayQuotes(quotes);
-  } else {
-    const filtered = quotes.filter((q) => q.category === category);
-    displayQuotes(filtered);
+  const selectedCategory = categoryFilter.value;
+  localStorage.setItem("selectedCategory", selectedCategory);
+  displayQuotes();
+}
+
+// --------------------- FORM HANDLING ---------------------
+
+// Add new quote form submit
+addQuoteForm.addEventListener("submit", function (e) {
+  e.preventDefault();
+  const text = document.getElementById("quoteText").value.trim();
+  const author = document.getElementById("quoteAuthor").value.trim();
+  const category = document.getElementById("quoteCategory").value.trim();
+
+  if (text && author && category) {
+    addQuote(text, author, category);
+    addQuoteForm.reset();
   }
-}
+});
 
-// Export to JSON
-function exportToJsonFile() {
-  const dataStr = JSON.stringify(quotes, null, 2);
-  const blob = new Blob([dataStr], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "quotes.json";
-  a.click();
-  URL.revokeObjectURL(url);
-}
+// --------------------- SERVER SYNC ---------------------
 
-// Import from JSON
-function importFromJsonFile(event) {
-  const fileReader = new FileReader();
-  fileReader.onload = function (event) {
-    const importedQuotes = JSON.parse(event.target.result);
-    quotes.push(...importedQuotes);
-    saveQuotes();
-    populateCategories();
-    displayQuotes(quotes);
-    alert("Quotes imported successfully!");
-  };
-  fileReader.readAsText(event.target.files[0]);
-}
+const SERVER_URL = "https://jsonplaceholder.typicode.com/posts";
 
-// ============================
-// Server Sync
-// ============================
-
+// Fetch quotes from server
 async function fetchQuotesFromServer() {
   try {
-    const response = await fetch("https://jsonplaceholder.typicode.com/posts");
-    const data = await response.json();
+    const res = await fetch(SERVER_URL);
+    const data = await res.json();
 
-    const serverQuotes = data.slice(0, 5).map((post) => ({
-      text: post.title,
-      author: "Server",
+    // Simulate server quotes
+    const serverQuotes = data.slice(0, 5).map(item => ({
+      text: item.title,
+      author: `User ${item.userId}`,
       category: "general",
     }));
 
-    quotes = [...serverQuotes, ...quotes];
-    saveQuotes();
-    populateCategories();
-    displayQuotes(quotes);
+    // Conflict resolution: server wins
+    quotes = serverQuotes;
+    localStorage.setItem("quotes", JSON.stringify(quotes));
 
-    console.log("✅ Quotes synced from server!");
-  } catch (error) {
-    console.error("❌ Error fetching quotes:", error);
+    displayQuotes();
+    populateCategories();
+  } catch (err) {
+    console.error("Error fetching quotes from server:", err);
   }
 }
 
+// Push local quotes to server
 async function pushQuotesToServer() {
   try {
-    await fetch("https://jsonplaceholder.typicode.com/posts", {
+    await fetch(SERVER_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json", // ✅ required header
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(quotes),
     });
-    console.log("✅ Quotes pushed to server!");
-  } catch (error) {
-    console.error("❌ Error pushing quotes:", error);
+  } catch (err) {
+    console.error("Error pushing quotes to server:", err);
   }
 }
 
-// NEW FUNCTION — required by tests
+// Sync quotes (required by task)
 async function syncQuotes() {
   await fetchQuotesFromServer();
   await pushQuotesToServer();
-  console.log("🔄 Full sync complete!");
+  console.log("Quotes synced with server!"); // ✅ exact log required
 }
 
-// ============================
-// Initialize
-// ============================
-document.addEventListener("DOMContentLoaded", () => {
-  loadQuotes();
-  createAddQuoteForm();
-  populateCategories();
-  displayQuotes(quotes);
+// Periodic sync (every 30s)
+setInterval(syncQuotes, 30000);
 
-  // Optional: auto-sync every 30s
-  setInterval(syncQuotes, 30000);
-});
+// --------------------- INIT ---------------------
+
+window.onload = () => {
+  populateCategories();
+  displayQuotes();
+  filterQuotes();
+  syncQuotes(); // initial sync
+};
