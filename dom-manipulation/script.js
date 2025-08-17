@@ -2,10 +2,9 @@
 // Dynamic Quote Generator
 // ============================
 
-// Quotes array
 let quotes = [];
 
-// Load from Local Storage on init
+// Load from Local Storage
 function loadQuotes() {
   const storedQuotes = localStorage.getItem("quotes");
   quotes = storedQuotes ? JSON.parse(storedQuotes) : [];
@@ -39,14 +38,14 @@ function createAddQuoteForm() {
 function displayQuotes(quotesToDisplay) {
   const list = document.getElementById("quoteList");
   list.innerHTML = "";
-  quotesToDisplay.forEach((q, index) => {
+  quotesToDisplay.forEach((q) => {
     const li = document.createElement("li");
     li.textContent = `"${q.text}" — ${q.author} [${q.category}]`;
     list.appendChild(li);
   });
 }
 
-// Populate categories dynamically
+// Populate categories
 function populateCategories() {
   const select = document.getElementById("categoryFilter");
   const categories = ["all", ...new Set(quotes.map((q) => q.category))];
@@ -59,7 +58,7 @@ function populateCategories() {
     select.appendChild(option);
   });
 
-  // Restore last selected category from localStorage
+  // Restore last selected
   const lastCategory = localStorage.getItem("lastCategory");
   if (lastCategory && categories.includes(lastCategory)) {
     select.value = lastCategory;
@@ -67,7 +66,7 @@ function populateCategories() {
   }
 }
 
-// Filter quotes by category
+// Filter by category
 function filterQuotes() {
   const category = document.getElementById("categoryFilter").value;
   localStorage.setItem("lastCategory", category);
@@ -79,21 +78,19 @@ function filterQuotes() {
   }
 }
 
-// Export to JSON file
+// Export to JSON
 function exportToJsonFile() {
   const dataStr = JSON.stringify(quotes, null, 2);
   const blob = new Blob([dataStr], { type: "application/json" });
   const url = URL.createObjectURL(blob);
-
   const a = document.createElement("a");
   a.href = url;
   a.download = "quotes.json";
   a.click();
-
   URL.revokeObjectURL(url);
 }
 
-// Import from JSON file
+// Import from JSON
 function importFromJsonFile(event) {
   const fileReader = new FileReader();
   fileReader.onload = function (event) {
@@ -108,49 +105,51 @@ function importFromJsonFile(event) {
 }
 
 // ============================
-// Server Sync & Conflict Handling
+// Server Sync
 // ============================
 
-// Fetch quotes from mock server
 async function fetchQuotesFromServer() {
   try {
     const response = await fetch("https://jsonplaceholder.typicode.com/posts");
     const data = await response.json();
 
-    // Simulate server providing quotes (take first 5 posts)
     const serverQuotes = data.slice(0, 5).map((post) => ({
       text: post.title,
       author: "Server",
       category: "general",
     }));
 
-    // Conflict resolution: server data takes precedence
     quotes = [...serverQuotes, ...quotes];
     saveQuotes();
     populateCategories();
     displayQuotes(quotes);
 
-    alert("Quotes synced from server!");
+    console.log("✅ Quotes synced from server!");
   } catch (error) {
-    console.error("Error fetching server quotes:", error);
+    console.error("❌ Error fetching quotes:", error);
   }
 }
 
-// Push quotes to server
 async function pushQuotesToServer() {
   try {
     await fetch("https://jsonplaceholder.typicode.com/posts", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json", // ✅ FIXED missing header
+        "Content-Type": "application/json", // ✅ required header
       },
       body: JSON.stringify(quotes),
     });
-
-    alert("Quotes pushed to server successfully!");
+    console.log("✅ Quotes pushed to server!");
   } catch (error) {
-    console.error("Error pushing quotes:", error);
+    console.error("❌ Error pushing quotes:", error);
   }
+}
+
+// NEW FUNCTION — required by tests
+async function syncQuotes() {
+  await fetchQuotesFromServer();
+  await pushQuotesToServer();
+  console.log("🔄 Full sync complete!");
 }
 
 // ============================
@@ -162,6 +161,6 @@ document.addEventListener("DOMContentLoaded", () => {
   populateCategories();
   displayQuotes(quotes);
 
-  // Example: auto sync every 30s
-  setInterval(fetchQuotesFromServer, 30000);
+  // Optional: auto-sync every 30s
+  setInterval(syncQuotes, 30000);
 });
