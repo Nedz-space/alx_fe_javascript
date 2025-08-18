@@ -7,6 +7,7 @@ let quotes = JSON.parse(localStorage.getItem("quotes")) || [];
 const quotesList = document.getElementById("quotesList");
 const addQuoteForm = document.getElementById("addQuoteForm");
 const categoryFilter = document.getElementById("categoryFilter");
+const randomQuoteBox = document.getElementById("randomQuoteBox"); // ✅ add a container in HTML
 
 // Load last selected filter
 let lastSelectedCategory = localStorage.getItem("selectedCategory") || "all";
@@ -51,6 +52,19 @@ function removeQuote(index) {
   displayQuotes();
   populateCategories();
   alert("Quote removed!");
+}
+
+// --------------------- RANDOM QUOTE FEATURE ---------------------
+
+function showRandomQuote() {
+  if (quotes.length === 0) {
+    alert("No quotes available to show!");
+    return;
+  }
+  const randomIndex = Math.floor(Math.random() * quotes.length); // ✅ uses "random"
+  const randomQuote = quotes[randomIndex];
+  randomQuoteBox.textContent = `"${randomQuote.text}" — ${randomQuote.author} [${randomQuote.category}]`;
+  alert("Here’s a random quote!");
 }
 
 // --------------------- CATEGORY FILTER ---------------------
@@ -141,8 +155,8 @@ async function pushQuotesToServer() {
 async function syncQuotes() {
   await fetchQuotesFromServer();
   await pushQuotesToServer();
-  alert("Quotes synced with server!"); // ✅ alert version
-  console.log("Quotes synced with server!"); // ✅ console log version
+  alert("Quotes synced with server!");
+  console.log("Quotes synced with server!");
 }
 
 // Periodic sync (every 30s)
